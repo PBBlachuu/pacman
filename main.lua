@@ -34,6 +34,8 @@ local menuBgR = 0
 local menuBgG = 0
 local menuBgB = 0
 
+local menuMode
+
 -- DRAW FUNCTIONS --
 
 function drawMenu()
@@ -89,6 +91,7 @@ end
 function love.load()
 	loadStuff()
 	gameMode = "menu"
+	menuMode = "main"
 end
 
 function love.draw()
@@ -102,7 +105,6 @@ end
 
 function love.update(dt)
 	delta = dt
-	updateMouse()
 	if gameMode == "menu" then
 		updateMenu()
 	end
@@ -121,6 +123,18 @@ function love.keypressed( key, unicode )
 	if key == " " then
 		isSpacePressed = true
 	end
+	if key == "up" then
+		isDownPressed = true
+	end
+	if key == "down" then
+		isDownPressed = true
+	end
+	if key == "left" then
+		isLeftPressed = true
+	end
+	if key == "right" then
+		isRightPressed = true
+	end
 end
 
 function love.keyreleased( key, unicode )
@@ -129,6 +143,18 @@ function love.keyreleased( key, unicode )
 	end
 	if key == " " then
 		isSpacePressed = false
+	end
+	if key == "up" then
+		isDownPressed = false
+	end
+	if key == "down" then
+		isDownPressed = false
+	end
+	if key == "left" then
+		isLeftPressed = false
+	end
+	if key == "right" then
+		isRightPressed = false
 	end
 end
 
