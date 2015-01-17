@@ -9,10 +9,16 @@ local delta
 -- resolution --
 local screenX
 local screenY
-local offsetX = 320
-local offsetY = 150
+local offsetX
+local offsetY
 local areaX = 800
 local areaY = 600
+local activeResolution
+local numerOfResolutions
+
+-- sound --
+local sound
+local soundText
 
 -- buttons --
 local isEscPressed
@@ -30,12 +36,64 @@ local fontSmall
 
 -- images --
 
+
 function loadStuff()
 	fontBig = love.graphics.newFont(48)
 	fontMedium = love.graphics.newFont(36)
 	fontSmall = love.graphics.newFont(14)
+
 	resetMenu()
+
+	createResolutions()
+	changeResolution(1)
+
+	sound = false
+	changeSoundSetting()
+
 	love.keyboard.setKeyRepeat(true)
+end
+
+-- game settings functions --
+
+function createResolutions()
+	-- creates a table of accepted resolutions --
+	resolutions = {}
+
+	resolutions[1] = {}
+	resolutions[1].x = 1440
+	resolutions[1].y = 900
+	resolutions[1].name = "1440x900"
+
+	resolutions[2] = {}
+	resolutions[2].x = 1600
+	resolutions[2].y = 900
+	resolutions[2].name = "1600x900"
+
+	resolutions[3] = {}
+	resolutions[3].x = 1680
+	resolutions[3].y = 1050
+	resolutions[3].name = "1680x1050"
+
+	resolutions[4] = {}
+	resolutions[4].x = 1920
+	resolutions[4].y = 1080
+	resolutions[4].name = "1920x1800"
+
+	resolutions[5] = {}
+	resolutions[5].x = 2560
+	resolutions[5].y = 1440
+	resolutions[5].name = "2560x1440"
+
+	numerOfResolutions = 5
+end
+
+
+function changeResolution(res)
+	-- changes resolution --
+	love.window.setMode(resolutions[res].x, resolutions[res].y, {fullscreen=true, fullscreentype="normal"})
+	offsetX = (resolutions[res].x - 800) / 2
+	offsetY = (resolutions[res].y - 600) / 2
+	activeResolution = res
 end
 
 function white()
@@ -46,10 +104,15 @@ function red()
 	love.graphics.setColor(255, 0, 0, 255)
 end
 
-
-
-
-
+function changeSoundSetting()
+	if sound then
+		sound = false
+		soundText = "Off"
+	else
+		sound = true
+		soundText = "On"
+	end
+end
 
 
 
@@ -120,13 +183,13 @@ function drawSettings()
 	love.graphics.print("PACMAN 0.2 alpha", offsetX+160, offsetY+100)
 	love.graphics.setFont(fontMedium)
 	white()
-	love.graphics.print("SETTING 1", offsetX+200, offsetY+300)
-	love.graphics.print("SETTING 2", offsetX+200, offsetY+350)
+	love.graphics.print("RESOLUTION", offsetX+200, offsetY+300)
+	love.graphics.print("SOUND", offsetX+200, offsetY+350)
 	love.graphics.print("SETTING 3", offsetX+200, offsetY+400)
 	if menuActive == 1 then red() else white() end
-	love.graphics.print("VALUE", offsetX+450, offsetY+300)
+	love.graphics.print(tostring(resolutions[activeResolution].name), offsetX+450, offsetY+300)
 	if menuActive == 2 then red() else white() end
-	love.graphics.print("VALUE", offsetX+450, offsetY+350)
+	love.graphics.print(tostring(soundText), offsetX+450, offsetY+350)
 	if menuActive == 3 then red() else white() end
 	love.graphics.print("VALUE", offsetX+450, offsetY+400)
 	if menuActive == 4 then red() else white() end
@@ -202,6 +265,7 @@ function updateMainMenu()
 		end
 		if menuActive == 3 then
 			menuMode = "credits"
+			resetMenu()
 		end
 		if menuActive == 4 then
 			love.event.push( 'quit' )
@@ -210,17 +274,24 @@ function updateMainMenu()
 end
 
 function updateSettings()
-	if isEnterPressed then
+	if isEnterPressed and menuEnabled then
 		if menuActive == 1 then
-			--
+			if activeResolution < numerOfResolutions then
+				activeResolution = activeResolution + 1
+			else
+				activeResolution = 1
+			end
+			menuTimer = 0
 		end
 		if menuActive == 2 then
-			--
+			changeSoundSetting()
+			menuTimer = 0
 		end
 		if menuActive == 3 then
 			--
 		end
 		if menuActive == 4 then
+			changeResolution(activeResolution)
 			menuPositions = 4
 			resetMenu()
 			menuMode = "main"
