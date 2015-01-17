@@ -36,6 +36,8 @@ local fontSmall
 
 -- images --
 
+-- game variables --
+
 
 function loadStuff()
 	fontBig = love.graphics.newFont(48)
