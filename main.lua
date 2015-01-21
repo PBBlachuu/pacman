@@ -11,8 +11,8 @@ local screenX
 local screenY
 local offsetX
 local offsetY
-local areaX = 800
-local areaY = 600
+local areaX = 1000
+local areaY = 800
 local activeResolution
 local numerOfResolutions
 
@@ -93,8 +93,8 @@ end
 function changeResolution(res)
 	-- changes resolution --
 	love.window.setMode(resolutions[res].x, resolutions[res].y, {fullscreen=true, fullscreentype="normal"})
-	offsetX = (resolutions[res].x - 800) / 2
-	offsetY = (resolutions[res].y - 600) / 2
+	offsetX = (resolutions[res].x - areaX) / 2
+	offsetY = (resolutions[res].y - areaY) / 2
 	activeResolution = res
 end
 
@@ -157,6 +157,7 @@ function drawMenu()
 	if menuMode == "credits" then
 		drawCredits()
 	end
+	drawGameDebugInfo()
 end
 
 function drawMainMenu()
@@ -258,7 +259,7 @@ end
 function updateMainMenu()
 	if isEnterPressed and menuEnabled then
 		if menuActive == 1 then
-			gameMode = "game"
+			initGame()
 		end
 		if menuActive == 2 then
 			menuMode = "settings"
@@ -315,6 +316,30 @@ end
 -- GAME --
 -- -- -- -- -- --
 
+local pacman
+local mapSizeX
+local mapSizeY
+local gridSize = 25
+local gridX = 28
+local gridY = 31
+local gridOffsetX
+local gridOffsetY
+
+function initPacman()
+	pacman = {}
+	pacman.x = 0
+	pacman.y = 0
+	pacman.mapX = 0
+	pacman.mapY = 0
+end
+
+function initGame()
+	gameMode = "game"
+	initPacman()
+	gridOffsetX = (areaX * 0.5) - (gridX * gridSize * 0.5) + offsetX
+	gridOffsetY = (areaY * 0.5) - (gridY * gridSize * 0.5) + offsetY
+end
+
 -- DRAW FUNCTIONS --
 
 function drawGameDebugInfo()
@@ -323,7 +348,32 @@ function drawGameDebugInfo()
    	love.graphics.print("FPS: "..tostring(love.timer.getFPS( )), 10, 25)
 end
 
+function drawGrid()
+	--red()
+	--love.graphics.rectangle("line", gridOffsetX, gridOffsetY, gridSize, gridSize)
+	for i = 0, gridY, 1 do
+		red()
+		love.graphics.rectangle("line", gridOffsetX, gridOffsetY+(i*gridSize), gridSize*gridX, 1)
+		if (i < gridY) then
+			white()
+			love.graphics.setFont(fontSmall)
+   			love.graphics.print(tostring(i), gridOffsetX, gridOffsetY+(i*gridSize))
+   		end
+	end
+	for i = 0, gridX, 1 do
+		red()
+		love.graphics.rectangle("line", gridOffsetX+(i*gridSize), gridOffsetY, 1, gridSize*gridY)
+		if (i < gridX) then
+			white()
+			love.graphics.setFont(fontSmall)
+   			love.graphics.print(tostring(i), gridOffsetX+(i*gridSize), gridOffsetY)
+   		end
+	end
+
+end
+
 function drawGame()
+	drawGrid()
 	drawGameDebugInfo()
 end
 
