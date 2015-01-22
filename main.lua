@@ -20,6 +20,10 @@ local numerOfResolutions
 local sound
 local soundText
 
+-- debug --
+local debugMode
+local debugModeText
+
 -- buttons --
 local isEscPressed
 local isSpacePressed
@@ -51,6 +55,8 @@ function loadStuff()
 
 	sound = false
 	changeSoundSetting()
+	debugMode = false
+	changeDebugSetting()
 
 	love.keyboard.setKeyRepeat(true)
 end
@@ -106,6 +112,22 @@ function red()
 	love.graphics.setColor(255, 0, 0, 255)
 end
 
+function blue()
+	love.graphics.setColor(0, 0, 255, 255)
+end
+
+function greenAlpha()
+	love.graphics.setColor(0, 255, 0, 127)
+end
+
+function yellowAlpha()
+	love.graphics.setColor(255, 255, 0, 127)
+end
+
+function redAlpha()
+	love.graphics.setColor(255, 0, 0, 127)
+end
+
 function changeSoundSetting()
 	if sound then
 		sound = false
@@ -113,6 +135,16 @@ function changeSoundSetting()
 	else
 		sound = true
 		soundText = "On"
+	end
+end
+
+function changeDebugSetting()
+	if debugMode then
+		debugMode = false
+		debugModeText = "Off"
+	else
+		debugMode = true
+		debugModeText = "On"
 	end
 end
 
@@ -188,13 +220,13 @@ function drawSettings()
 	white()
 	love.graphics.print("RESOLUTION", offsetX+200, offsetY+300)
 	love.graphics.print("SOUND", offsetX+200, offsetY+350)
-	love.graphics.print("SETTING 3", offsetX+200, offsetY+400)
+	love.graphics.print("DEV MODE", offsetX+200, offsetY+400)
 	if menuActive == 1 then red() else white() end
 	love.graphics.print(tostring(resolutions[activeResolution].name), offsetX+450, offsetY+300)
 	if menuActive == 2 then red() else white() end
 	love.graphics.print(tostring(soundText), offsetX+450, offsetY+350)
 	if menuActive == 3 then red() else white() end
-	love.graphics.print("VALUE", offsetX+450, offsetY+400)
+	love.graphics.print(tostring(debugModeText), offsetX+450, offsetY+400)
 	if menuActive == 4 then red() else white() end
 	love.graphics.print("SAVE", offsetX+450, offsetY+450)
 end
@@ -291,7 +323,8 @@ function updateSettings()
 			menuTimer = 0
 		end
 		if menuActive == 3 then
-			--
+			changeDebugSetting()
+			menuTimer = 0
 		end
 		if menuActive == 4 then
 			changeResolution(activeResolution)
@@ -319,7 +352,7 @@ end
 local pacman
 local mapSizeX
 local mapSizeY
-local gridSize = 25
+local gridSize = 24
 local gridX = 28
 local gridY = 31
 local gridOffsetX
@@ -327,15 +360,30 @@ local gridOffsetY
 
 function initPacman()
 	pacman = {}
-	pacman.x = 0
-	pacman.y = 0
-	pacman.mapX = 0
-	pacman.mapY = 0
+	pacman.mapX = 4
+	pacman.mapY = 8
+	pacman.x = pacman.mapX * gridSize + gridSize * 0.5
+	pacman.y = pacman.mapY * gridSize + gridSize * 0.5
+	pacman.speed = 10
+	pacman.direction = 4
+	pacman.nextDirection = 4
+	pacman.movement = 0
+end
+
+function initMap()
+	map = {}
+	for i = 0, gridX, 1 do
+		map[i] = {}
+		for j = 0, gridY, 1 do
+			map[i][j] = false
+		end
+	end
 end
 
 function initGame()
 	gameMode = "game"
 	initPacman()
+	initMap()
 	gridOffsetX = (areaX * 0.5) - (gridX * gridSize * 0.5) + offsetX
 	gridOffsetY = (areaY * 0.5) - (gridY * gridSize * 0.5) + offsetY
 end
@@ -343,41 +391,113 @@ end
 -- DRAW FUNCTIONS --
 
 function drawGameDebugInfo()
-	love.graphics.setFont(fontSmall)
-	love.graphics.setColor( 255, 255, 255, 255 )
-   	love.graphics.print("FPS: "..tostring(love.timer.getFPS( )), 10, 25)
+	if debugMode then
+		local debug_counter = 1
+		local debug_offset = 15
+		white()
+		love.graphics.setFont(fontSmall)
+   		love.graphics.print("FPS: "..tostring(love.timer.getFPS( )), 10, debug_counter*debug_offset)
+   		if sound then
+   			debug_counter = debug_counter + 1
+   			love.graphics.print("Sound: On", 10, debug_counter*debug_offset)
+   		end
+   		if isUpPressed then
+   			debug_counter = debug_counter + 1
+   			love.graphics.print("Up pressed", 10, debug_counter*debug_offset)
+   		end
+   		if isDownPressed then
+   			debug_counter = debug_counter + 1
+   			love.graphics.print("Down pressed", 10, debug_counter*debug_offset)
+   		end
+   		if isLeftPressed then
+   			debug_counter = debug_counter + 1
+   			love.graphics.print("Left pressed", 10, debug_counter*debug_offset)
+   		end
+   		if isRightPressed then
+   			debug_counter = debug_counter + 1
+   			love.graphics.print("Right pressed", 10, debug_counter*debug_offset)
+   		end
+	end
+	
 end
 
 function drawGrid()
-	--red()
-	--love.graphics.rectangle("line", gridOffsetX, gridOffsetY, gridSize, gridSize)
-	for i = 0, gridY, 1 do
-		red()
-		love.graphics.rectangle("line", gridOffsetX, gridOffsetY+(i*gridSize), gridSize*gridX, 1)
-		if (i < gridY) then
-			white()
-			love.graphics.setFont(fontSmall)
-   			love.graphics.print(tostring(i), gridOffsetX, gridOffsetY+(i*gridSize))
-   		end
+	if debugMode then
+		for i = 0, gridY, 1 do
+			red()
+			love.graphics.rectangle("fill", gridOffsetX, gridOffsetY+(i*gridSize), gridSize*gridX, 1)
+			if (i < gridY) then
+				white()
+				love.graphics.setFont(fontSmall)
+	   			love.graphics.print(tostring(i), gridOffsetX-20, gridOffsetY+(i*gridSize)+5)
+	   		end
+		end
+		for i = 0, gridX, 1 do
+			red()
+			love.graphics.rectangle("fill", gridOffsetX+(i*gridSize), gridOffsetY, 1, gridSize*gridY)
+			if (i < gridX) then
+				white()
+				love.graphics.setFont(fontSmall)
+	   			love.graphics.print(tostring(i), gridOffsetX+(i*gridSize)+5, gridOffsetY-20)
+	   		end
+		end
 	end
-	for i = 0, gridX, 1 do
-		red()
-		love.graphics.rectangle("line", gridOffsetX+(i*gridSize), gridOffsetY, 1, gridSize*gridY)
-		if (i < gridX) then
-			white()
-			love.graphics.setFont(fontSmall)
-   			love.graphics.print(tostring(i), gridOffsetX+(i*gridSize), gridOffsetY)
-   		end
-	end
-
 end
 
+function drawPacman()
+	--
+	drawPacmanDebug()
+end
+
+function drawPacmanDebug()
+	if debugMode then
+		local debug_counter = 1
+		local debug_offset = 15
+		white()
+		love.graphics.setFont(fontSmall)
+   		love.graphics.print("Pacman mapY: "..tostring(pacman.mapY), 10, (resolutions[activeResolution].y - debug_counter * debug_offset))
+   		debug_counter = debug_counter + 1
+   		love.graphics.print("Pacman mapX: "..tostring(pacman.mapX), 10, (resolutions[activeResolution].y - debug_counter * debug_offset))
+   		yellowAlpha()
+   		love.graphics.rectangle("fill", pacman.mapX * gridSize + gridOffsetX, pacman.mapY * gridSize + gridOffsetY, gridSize, gridSize)
+	end
+end
+
+function drawMaze()
+	drawMazeDebug()
+end
+
+function drawMazeDebug()
+	if debugMode then
+		blue()
+		--
+	end
+end
+
+
 function drawGame()
+	drawMaze()
+	drawPacman()
 	drawGrid()
 	drawGameDebugInfo()
 end
 
 -- UPDATE FUNCTIONS --
+
+function updatePacman()
+	if isUpPressed then
+		pacman.nextDirection = 1
+	end
+	if isDownPressed then
+		pacman.nextDirection = 3
+	end
+	if isLeftPressed then
+		pacman.nextDirection = 4
+	end
+	if isRightPressed then
+		pacman.nextDirection = 2
+	end
+end
 
 function updateGame()
 	if isEscPressed == true then
