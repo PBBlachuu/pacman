@@ -116,8 +116,12 @@ function blue()
 	love.graphics.setColor(0, 0, 255, 255)
 end
 
+function yellow()
+	love.graphics.setColor(255, 255, 0, 255)
+end
+
 function greenAlpha()
-	love.graphics.setColor(0, 255, 0, 127)
+	love.graphics.setColor(0, 255, 0, 90)
 end
 
 function yellowAlpha()
@@ -360,14 +364,30 @@ local gridOffsetY
 
 function initPacman()
 	pacman = {}
-	pacman.mapX = 4
-	pacman.mapY = 8
+	pacman.mapX = 13
+	pacman.mapY = 15
 	pacman.x = pacman.mapX * gridSize + gridSize * 0.5
 	pacman.y = pacman.mapY * gridSize + gridSize * 0.5
 	pacman.speed = 10
 	pacman.direction = 4
 	pacman.nextDirection = 4
 	pacman.movement = 0
+	pacman.upFree = false
+	pacman.downFree = false
+	pacman.leftFree = false
+	pacman.rightFree = false
+	if map[pacman.mapX][pacman.mapY-1] == false then
+		pacman.upFree = true
+	end
+	if map[pacman.mapX][pacman.mapY+1] == false then
+		pacman.downFree = true
+	end
+	if map[pacman.mapX-1][pacman.mapY] == false then
+		pacman.leftFree = true
+	end
+	if map[pacman.mapX+1][pacman.mapY] == false then
+		pacman.rightFree = true
+	end
 end
 
 function initMap()
@@ -382,8 +402,8 @@ end
 
 function initGame()
 	gameMode = "game"
-	initPacman()
 	initMap()
+	initPacman()
 	gridOffsetX = (areaX * 0.5) - (gridX * gridSize * 0.5) + offsetX
 	gridOffsetY = (areaY * 0.5) - (gridY * gridSize * 0.5) + offsetY
 end
@@ -445,7 +465,8 @@ function drawGrid()
 end
 
 function drawPacman()
-	--
+	yellow()
+	love.graphics.circle("fill", pacman.x+gridOffsetX, pacman.y+gridOffsetY, gridSize * 0.5 - 4, 50)
 	drawPacmanDebug()
 end
 
@@ -455,11 +476,46 @@ function drawPacmanDebug()
 		local debug_offset = 15
 		white()
 		love.graphics.setFont(fontSmall)
+		debug_counter = debug_counter + 1
+   		love.graphics.print("Pacman speed: "..tostring(pacman.speed), 10, (resolutions[activeResolution].y - debug_counter * debug_offset))
+   		debug_counter = debug_counter + 1
    		love.graphics.print("Pacman mapY: "..tostring(pacman.mapY), 10, (resolutions[activeResolution].y - debug_counter * debug_offset))
    		debug_counter = debug_counter + 1
    		love.graphics.print("Pacman mapX: "..tostring(pacman.mapX), 10, (resolutions[activeResolution].y - debug_counter * debug_offset))
+   		debug_counter = debug_counter + 1
+   		love.graphics.print("Pacman Y: "..tostring(pacman.y), 10, (resolutions[activeResolution].y - debug_counter * debug_offset))
+   		debug_counter = debug_counter + 1
+   		love.graphics.print("Pacman X: "..tostring(pacman.x), 10, (resolutions[activeResolution].y - debug_counter * debug_offset))
    		yellowAlpha()
    		love.graphics.rectangle("fill", pacman.mapX * gridSize + gridOffsetX, pacman.mapY * gridSize + gridOffsetY, gridSize, gridSize)
+   		if pacman.upFree then
+   			greenAlpha()
+   			love.graphics.rectangle("fill", pacman.mapX * gridSize + gridOffsetX, (pacman.mapY-1) * gridSize + gridOffsetY, gridSize, gridSize)
+   		else
+   			redAlpha()
+   			love.graphics.rectangle("fill", pacman.mapX * gridSize + gridOffsetX, (pacman.mapY-1) * gridSize + gridOffsetY, gridSize, gridSize)
+   		end
+   		if pacman.downFree then
+   			greenAlpha()
+   			love.graphics.rectangle("fill", pacman.mapX * gridSize + gridOffsetX, (pacman.mapY+1) * gridSize + gridOffsetY, gridSize, gridSize)
+   		else
+   			redAlpha()
+   			love.graphics.rectangle("fill", pacman.mapX * gridSize + gridOffsetX, (pacman.mapY+1) * gridSize + gridOffsetY, gridSize, gridSize)
+   		end
+   		if pacman.leftFree then
+   			greenAlpha()
+   			love.graphics.rectangle("fill", (pacman.mapX-1) * gridSize + gridOffsetX, pacman.mapY * gridSize + gridOffsetY, gridSize, gridSize)
+   		else
+   			redAlpha()
+   			love.graphics.rectangle("fill", (pacman.mapX-1) * gridSize + gridOffsetX, pacman.mapY * gridSize + gridOffsetY, gridSize, gridSize)
+   		end
+   		if pacman.rightFree then
+   			greenAlpha()
+   			love.graphics.rectangle("fill", (pacman.mapX+1) * gridSize + gridOffsetX, pacman.mapY * gridSize + gridOffsetY, gridSize, gridSize)
+   		else
+   			redAlpha()
+   			love.graphics.rectangle("fill", (pacman.mapX+1) * gridSize + gridOffsetX, pacman.mapY * gridSize + gridOffsetY, gridSize, gridSize)
+   		end
 	end
 end
 
@@ -497,6 +553,11 @@ function updatePacman()
 	if isRightPressed then
 		pacman.nextDirection = 2
 	end
+	
+	pacman.movement = delta * pacman.speed
+	
+
+	
 end
 
 function updateGame()
