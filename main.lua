@@ -358,14 +358,14 @@ local mapSizeX
 local mapSizeY
 local gridSize = 24
 local gridX = 28
-local gridY = 31
+local gridY = 30
 local gridOffsetX
 local gridOffsetY
 
 function initPacman()
 	pacman = {}
-	pacman.mapX = 13
-	pacman.mapY = 15
+	pacman.mapX = 1 -- 13
+	pacman.mapY = 1 -- 15
 	pacman.x = pacman.mapX * gridSize + gridSize * 0.5
 	pacman.y = pacman.mapY * gridSize + gridSize * 0.5
 	pacman.speed = 10
@@ -391,12 +391,33 @@ function initPacman()
 end
 
 function initMap()
+	local i
+	local j
+	local k
+	contents, size = love.filesystem.read("main.map", gridX*gridY )
+	print(contents)
+	--love.filesystem.load("map.lua")()
+	
 	map = {}
 	for i = 0, gridX, 1 do
 		map[i] = {}
 		for j = 0, gridY, 1 do
 			map[i][j] = false
 		end
+	end
+
+	j = 0
+	k = 0
+	for i = 1, #contents do
+    	local c = contents:sub(i,i)
+    	if c == "1" then
+    		map[j][k] = true
+    	end
+    	j = j + 1
+    	if j == gridX then
+    		j = 0
+    		k = k + 1
+    	end
 	end
 end
 
@@ -526,7 +547,13 @@ end
 function drawMazeDebug()
 	if debugMode then
 		blue()
-		--
+		for i = 0, gridX, 1 do
+			for j = 0, gridY, 1 do
+				if map[i][j] then
+					love.graphics.rectangle("fill", i * gridSize + gridOffsetX, j * gridSize + gridOffsetY, gridSize, gridSize)
+				end
+			end
+		end	
 	end
 end
 
