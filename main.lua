@@ -364,13 +364,15 @@ local gridOffsetY
 
 function initPacman()
 	pacman = {}
-	pacman.mapX = 1 -- 13
-	pacman.mapY = 1 -- 15
+	pacman.mapX = 13
+	pacman.mapY = 16
 	pacman.x = pacman.mapX * gridSize + gridSize * 0.5
 	pacman.y = pacman.mapY * gridSize + gridSize * 0.5
-	pacman.speed = 10
+	pacman.speed = 70
 	pacman.direction = 4
+	pacman.directionText = "left"
 	pacman.nextDirection = 4
+	pacman.nextDirectionText = "left"
 	pacman.movement = 0
 	pacman.upFree = false
 	pacman.downFree = false
@@ -395,9 +397,6 @@ function initMap()
 	local j
 	local k
 	contents, size = love.filesystem.read("main.map", gridX*gridY )
-	print(contents)
-	--love.filesystem.load("map.lua")()
-	
 	map = {}
 	for i = 0, gridX, 1 do
 		map[i] = {}
@@ -459,7 +458,6 @@ function drawGameDebugInfo()
    			love.graphics.print("Right pressed", 10, debug_counter*debug_offset)
    		end
 	end
-	
 end
 
 function drawGrid()
@@ -499,6 +497,10 @@ function drawPacmanDebug()
 		love.graphics.setFont(fontSmall)
 		debug_counter = debug_counter + 1
    		love.graphics.print("Pacman speed: "..tostring(pacman.speed), 10, (resolutions[activeResolution].y - debug_counter * debug_offset))
+   		debug_counter = debug_counter + 1
+   		love.graphics.print("Pacman direction: "..tostring(pacman.directionText), 10, (resolutions[activeResolution].y - debug_counter * debug_offset))
+   		debug_counter = debug_counter + 1
+   		love.graphics.print("Pacman next direct: "..tostring(pacman.nextDirectionText), 10, (resolutions[activeResolution].y - debug_counter * debug_offset))
    		debug_counter = debug_counter + 1
    		love.graphics.print("Pacman mapY: "..tostring(pacman.mapY), 10, (resolutions[activeResolution].y - debug_counter * debug_offset))
    		debug_counter = debug_counter + 1
@@ -568,29 +570,94 @@ end
 -- UPDATE FUNCTIONS --
 
 function updatePacman()
-	if isUpPressed then
-		pacman.nextDirection = 1
-	end
-	if isDownPressed then
-		pacman.nextDirection = 3
-	end
-	if isLeftPressed then
-		pacman.nextDirection = 4
-	end
-	if isRightPressed then
-		pacman.nextDirection = 2
-	end
-	
-	pacman.movement = delta * pacman.speed
 	
 
-	
+	-- chceck if left/right/up/down free --
+	pacman.upFree = false
+	pacman.downFree = false
+	pacman.leftFree = false
+	pacman.rightFree = false
+	if map[pacman.mapX][pacman.mapY-1] == false then
+		pacman.upFree = true
+	end
+	if map[pacman.mapX][pacman.mapY+1] == false then
+		pacman.downFree = true
+	end
+	if map[pacman.mapX-1][pacman.mapY] == false then
+		pacman.leftFree = true
+	end
+	if map[pacman.mapX+1][pacman.mapY] == false then
+		pacman.rightFree = true
+	end
+
+	-- check if pacman out of his box --
+	if pacman.x < (pacman.mapX * gridSize + gridSize) then
+		pacman.mapX = pacman.mapX - 1
+	end
+	if pacman.x > (pacman.mapX * gridSize + gridSize) then
+		pacman.mapX = pacman.mapX + 1
+	end
+	if pacman.y < (pacman.mapY * gridSize + gridSize) then
+		pacman.mapY = pacman.mapY - 1
+	end
+	if pacman.y > (pacman.mapY * gridSize + gridSize) then
+		pacman.mapY = pacman.mapY + 1
+	end
+
+	pacman.movement = delta * pacman.speed
+
+	--if (pacman.direction == 4) and (pacman.leftFree == true) then
+	--	pacman.
+
+	-- update input --
+	if isUpPressed then
+		--pacman.nextDirection = 1
+		--pacman.nextDirectionText = "up"
+		if pacman.upFree then
+			pacman.y = pacman.y - pacman.movement
+		end
+		if pacman.y > (pacman.mapY * gridSize + 0.5 * gridSize) then
+			pacman.y = pacman.y - pacman.movement
+		end
+	end
+	if isDownPressed then
+		--pacman.nextDirection = 3
+		--pacman.nextDirectionText = "down"
+		if pacman.downFree then
+			pacman.y = pacman.y + pacman.movement
+		end
+		if pacman.y < (pacman.mapY * gridSize + 0.5 * gridSize) then
+			pacman.y = pacman.y + pacman.movement
+		end
+	end
+	if isLeftPressed then
+		--pacman.nextDirection = 4
+		--pacman.nextDirectionText = "left"
+		if pacman.leftFree then
+			pacman.x = pacman.x - pacman.movement
+		end
+		if pacman.x > (pacman.mapX * gridSize + 0.5 * gridSize) then
+			pacman.x = pacman.x - pacman.movement
+		end
+	end
+	if isRightPressed then
+		--pacman.nextDirection = 2
+		--pacman.nextDirectionText = "right"
+		if pacman.rightFree then
+			pacman.x = pacman.x + pacman.movement
+		end
+		if pacman.x < (pacman.mapX * gridSize + 0.5 * gridSize) then
+			pacman.x = pacman.x + pacman.movement
+		end
+	end
+
 end
 
 function updateGame()
 	if isEscPressed == true then
 		love.event.push( 'quit' )
 	end
+	updatePacman()
 end
 
 
