@@ -347,6 +347,21 @@ function updateCredits()
 end
 
 
+-- -- -- -- -- --
+-- PAUSE --
+-- -- -- -- -- --
+
+-- DRAW FUNCTIONS --
+
+function drawPause()
+	--
+end
+
+-- UPDATE FUNCTIONS --
+
+function updatePause()
+	--
+end
 
 -- -- -- -- -- --
 -- GAME --
@@ -363,6 +378,7 @@ local gridOffsetX
 local gridOffsetY
 local dotSize = 0.14 * gridSize
 local score = 0
+local specialDotMaxTime = 3
 
 function initPacman()
 	pacman = {}
@@ -378,6 +394,8 @@ function initPacman()
 	pacman.nextDirectionText = "left"
 	pacman.movement = 0
 	pacman.distance = 0
+	pacman.specialDotActive = false
+	pacman.specialDotTimer = 0
 	pacman.upFree = false
 	pacman.downFree = false
 	pacman.leftFree = false
@@ -400,6 +418,7 @@ function initMap()
 	local i
 	local j
 	local k
+
 	contents, size = love.filesystem.read("maps/maze.map", gridX*gridY )
 	map = {}
 	for i = 0, gridX, 1 do
@@ -453,6 +472,24 @@ function initMap()
 	tunnel[1].y = 13
 	tunnel[2].x = 26
 	tunnel[2].y = 13
+
+	specialDots = {}
+	specialDots[1] = {}
+	specialDots[2] = {}
+	specialDots[3] = {}
+	specialDots[4] = {}
+	specialDots[1].x = 1
+	specialDots[1].y = 3
+	specialDots[1].active = true
+	specialDots[2].x = 26
+	specialDots[2].y = 3
+	specialDots[2].active = true
+	specialDots[3].x = 1
+	specialDots[3].y = 22
+	specialDots[3].active = true
+	specialDots[4].x = 26
+	specialDots[4].y = 22
+	specialDots[4].active = true
 end
 
 function initGame()
@@ -546,6 +583,12 @@ function drawPacmanDebug()
    		love.graphics.print("Pacman Y: "..tostring(pacman.y), 10, (resolutions[activeResolution].y - debug_counter * debug_offset))
    		debug_counter = debug_counter + 1
    		love.graphics.print("Pacman X: "..tostring(pacman.x), 10, (resolutions[activeResolution].y - debug_counter * debug_offset))
+   		if pacman.specialDotActive then
+   			debug_counter = debug_counter + 1
+   			love.graphics.print("specialDotTimer: "..tostring(pacman.specialDotTimer), 10, (resolutions[activeResolution].y - debug_counter * debug_offset))
+   			debug_counter = debug_counter + 1
+   			love.graphics.print("specialDotActive: "..tostring(pacman.specialDotActive), 10, (resolutions[activeResolution].y - debug_counter * debug_offset))
+   		end
    		yellowAlpha()
    		love.graphics.rectangle("fill", pacman.mapX * gridSize + gridOffsetX, pacman.mapY * gridSize + gridOffsetY, gridSize, gridSize)
    		if pacman.upFree then
@@ -607,10 +650,22 @@ function drawDots()
 	end
 end
 
+function drawSpecialDots()
+	white()
+	for i = 1, 4, 1 do
+		if specialDots[i].active then
+			local specialDotX = specialDots[i].x * gridSize + gridOffsetX + 0.5 * gridSize
+			local specialDotY = specialDots[i].y * gridSize + gridOffsetY + 0.5 * gridSize			
+			love.graphics.circle("fill", specialDotX, specialDotY, dotSize * 2, 50)
+		end
+	end
+end
+
 
 function drawGame()
 	drawMaze()
 	drawDots()
+	drawSpecialDots()
 	drawPacman()
 	drawGrid()
 	drawGameDebugInfo()
@@ -695,45 +750,36 @@ function updatePacman()
 	if pacman.direction == 1 then
 		if pacman.upFree then
 			pacman.y = pacman.y - pacman.movement
-			increasePacmanDistance()
-
 		end
 		if pacman.y > (pacman.mapY * gridSize + 0.5 * gridSize) then
 			pacman.y = pacman.y - pacman.movement
-			increasePacmanDistance()
 		end
 	end
 
 	if pacman.direction == 3 then
 		if pacman.downFree then
 			pacman.y = pacman.y + pacman.movement
-			increasePacmanDistance()
 		end
 		if pacman.y < (pacman.mapY * gridSize + 0.5 * gridSize) then
 			pacman.y = pacman.y + pacman.movement
-			increasePacmanDistance()
 		end
 	end
 
 	if pacman.direction == 2 then
 		if pacman.rightFree then
 			pacman.x = pacman.x + pacman.movement
-			increasePacmanDistance()
 		end
 		if pacman.x < (pacman.mapX * gridSize + 0.5 * gridSize) then
 			pacman.x = pacman.x + pacman.movement
-			increasePacmanDistance()
 		end
 	end
 
 	if pacman.direction == 4 then
 		if pacman.leftFree then
 			pacman.x = pacman.x - pacman.movement
-			increasePacmanDistance()
 		end
 		if pacman.x > (pacman.mapX * gridSize + 0.5 * gridSize) then
 			pacman.x = pacman.x - pacman.movement
-			increasePacmanDistance()
 		end
 	end
 
@@ -762,10 +808,31 @@ function updatePacman()
 		dots[pacman.mapX][pacman.mapY] = false
 		score = score + 1
 	end
+
+	-- check if pacman is on a special dot --
+	for i = 1, 4, 1 do
+		if (specialDots[i].x == pacman.mapX) and (specialDots[i].y == pacman.mapY) then
+			if specialDots[i].active then
+				specialDots[i].active = false
+				pacman.specialDotActive = true
+			end
+		end
+	end
+
+	-- update pacman special dot timer --
+	if pacman.specialDotActive then
+		if pacman.specialDotTimer > specialDotMaxTime then
+			pacman.specialDotTimer = 0
+			pacman.specialDotActive = false
+		else
+			pacman.specialDotTimer = pacman.specialDotTimer + delta
+		end
+	end
+
 end
 
 function increasePacmanDistance()
-	pacman.distance = pacman.distance + pacman.movement
+	pacman.distance = pacman.distance + 1
 end
 
 function pacmanChangeDirection()
@@ -784,7 +851,6 @@ end
 
 
 
-
 -- LUA DEFAULT FUNCTIONS --
 
 function love.load()
@@ -799,7 +865,10 @@ function love.draw()
    	end
    	if gameMode == "game" then
    		drawGame()
-   	end   	
+   	end
+   	if gameMode == "pause" then
+   		drawPause()
+   	end 	
 end
 
 function love.update(dt)
@@ -809,6 +878,9 @@ function love.update(dt)
 	end
 	if gameMode == "game" then
 		updateGame()
+	end
+	if gameMode == "pause" then
+		updatePause()
 	end
 end
 
