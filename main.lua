@@ -211,7 +211,6 @@ function drawMainMenu()
 	love.graphics.print("CREDITS", offsetX+200, offsetY+400)
 	if menuActive == 4 then red() else white() end
 	love.graphics.print("QUIT", offsetX+200, offsetY+450)
-	--love.graphics.print("Press space to continue", 700, 465)
 end
 
 function drawSettings()
@@ -362,6 +361,8 @@ local gridX = 28
 local gridY = 30
 local gridOffsetX
 local gridOffsetY
+local dotSize = 0.14 * gridSize
+local score = 0
 
 function initPacman()
 	pacman = {}
@@ -370,11 +371,13 @@ function initPacman()
 	pacman.x = pacman.mapX * gridSize + gridSize * 0.5
 	pacman.y = pacman.mapY * gridSize + gridSize * 0.5
 	pacman.speed = 130
+	pacman.size = gridSize * 0.5 - 4
 	pacman.direction = 4
 	pacman.directionText = "left"
 	pacman.nextDirection = 4
 	pacman.nextDirectionText = "left"
 	pacman.movement = 0
+	pacman.distance = 0
 	pacman.upFree = false
 	pacman.downFree = false
 	pacman.leftFree = false
@@ -397,7 +400,7 @@ function initMap()
 	local i
 	local j
 	local k
-	contents, size = love.filesystem.read("main.map", gridX*gridY )
+	contents, size = love.filesystem.read("maps/maze.map", gridX*gridY )
 	map = {}
 	for i = 0, gridX, 1 do
 		map[i] = {}
@@ -412,6 +415,29 @@ function initMap()
     	local c = contents:sub(i,i)
     	if c == "1" then
     		map[j][k] = true
+    	end
+    	j = j + 1
+    	if j == gridX then
+    		j = 0
+    		k = k + 1
+    	end
+	end
+
+	contents, size = love.filesystem.read("maps/dots.map", gridX*gridY )
+	dots = {}
+	for i = 0, gridX, 1 do
+		dots[i] = {}
+		for j = 0, gridY, 1 do
+			dots[i][j] = false
+		end
+	end
+
+	j = 0
+	k = 0
+	for i = 1, #contents do
+    	local c = contents:sub(i,i)
+    	if c == "1" then
+    		dots[j][k] = true
     	end
     	j = j + 1
     	if j == gridX then
@@ -494,7 +520,7 @@ end
 
 function drawPacman()
 	yellow()
-	love.graphics.circle("fill", pacman.x+gridOffsetX, pacman.y+gridOffsetY, gridSize * 0.5 - 4, 50)
+	love.graphics.circle("fill", pacman.x+gridOffsetX, pacman.y+gridOffsetY, pacman.size, 50)
 	drawPacmanDebug()
 end
 
@@ -505,6 +531,8 @@ function drawPacmanDebug()
 		white()
 		love.graphics.setFont(fontSmall)
 		debug_counter = debug_counter + 1
+		love.graphics.print("Pacman distance: "..tostring(pacman.distance), 10, (resolutions[activeResolution].y - debug_counter * debug_offset))
+   		debug_counter = debug_counter + 1		
    		love.graphics.print("Pacman speed: "..tostring(pacman.speed), 10, (resolutions[activeResolution].y - debug_counter * debug_offset))
    		debug_counter = debug_counter + 1
    		love.graphics.print("Pacman direction: "..tostring(pacman.directionText), 10, (resolutions[activeResolution].y - debug_counter * debug_offset))
@@ -568,9 +596,21 @@ function drawMazeDebug()
 	end
 end
 
+function drawDots()
+	white()
+	for i = 0, gridX, 1 do
+		for j = 0, gridY, 1 do
+			if dots[i][j] then
+				love.graphics.circle("fill", i * gridSize + gridOffsetX + 0.5 * gridSize, j * gridSize + gridOffsetY + 0.5 * gridSize, dotSize, 50)
+			end
+		end
+	end
+end
+
 
 function drawGame()
 	drawMaze()
+	drawDots()
 	drawPacman()
 	drawGrid()
 	drawGameDebugInfo()
@@ -655,36 +695,45 @@ function updatePacman()
 	if pacman.direction == 1 then
 		if pacman.upFree then
 			pacman.y = pacman.y - pacman.movement
+			increasePacmanDistance()
+
 		end
 		if pacman.y > (pacman.mapY * gridSize + 0.5 * gridSize) then
 			pacman.y = pacman.y - pacman.movement
+			increasePacmanDistance()
 		end
 	end
 
 	if pacman.direction == 3 then
 		if pacman.downFree then
 			pacman.y = pacman.y + pacman.movement
+			increasePacmanDistance()
 		end
 		if pacman.y < (pacman.mapY * gridSize + 0.5 * gridSize) then
 			pacman.y = pacman.y + pacman.movement
+			increasePacmanDistance()
 		end
 	end
 
 	if pacman.direction == 2 then
 		if pacman.rightFree then
 			pacman.x = pacman.x + pacman.movement
+			increasePacmanDistance()
 		end
 		if pacman.x < (pacman.mapX * gridSize + 0.5 * gridSize) then
 			pacman.x = pacman.x + pacman.movement
+			increasePacmanDistance()
 		end
 	end
 
 	if pacman.direction == 4 then
 		if pacman.leftFree then
 			pacman.x = pacman.x - pacman.movement
+			increasePacmanDistance()
 		end
 		if pacman.x > (pacman.mapX * gridSize + 0.5 * gridSize) then
 			pacman.x = pacman.x - pacman.movement
+			increasePacmanDistance()
 		end
 	end
 
@@ -707,15 +756,16 @@ function updatePacman()
 		end
 	end
 
-	
+	-- check if pacman is on a dot --
 
+	if (dots[pacman.mapX][pacman.mapY] == true) then
+		dots[pacman.mapX][pacman.mapY] = false
+		score = score + 1
+	end
 end
 
-function updateGame()
-	if isEscPressed == true then
-		love.event.push( 'quit' )
-	end
-	updatePacman()
+function increasePacmanDistance()
+	pacman.distance = pacman.distance + pacman.movement
 end
 
 function pacmanChangeDirection()
@@ -725,6 +775,12 @@ function pacmanChangeDirection()
 	pacman.y = pacman.mapY * gridSize + gridSize * 0.5
 end
 
+function updateGame()
+	if isEscPressed == true then
+		love.event.push( 'quit' )
+	end
+	updatePacman()
+end
 
 
 
