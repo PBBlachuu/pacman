@@ -37,16 +37,17 @@ local isRightPressed
 local fontBig
 local fontMedium
 local fontSmall
+local fontSmallMedium
 
 -- images --
 
 -- game variables --
 
-
 function loadStuff()
 	fontBig = love.graphics.newFont(48)
 	fontMedium = love.graphics.newFont(36)
 	fontSmall = love.graphics.newFont(14)
+	fontSmallMedium = love.graphics.newFont(28)
 
 	resetMenu()
 
@@ -151,9 +152,6 @@ function changeDebugSetting()
 		debugModeText = "On"
 	end
 end
-
-
-
 
 -- -- -- -- -- --
 -- MENU --
@@ -294,6 +292,7 @@ end
 function updateMainMenu()
 	if isEnterPressed and menuEnabled then
 		if menuActive == 1 then
+			menuPositions = 3
 			initGame()
 		end
 		if menuActive == 2 then
@@ -344,23 +343,6 @@ function updateCredits()
 		menuPositions = 4
 		menuMode = "main"
 	end
-end
-
-
--- -- -- -- -- --
--- PAUSE --
--- -- -- -- -- --
-
--- DRAW FUNCTIONS --
-
-function drawPause()
-	--
-end
-
--- UPDATE FUNCTIONS --
-
-function updatePause()
-	--
 end
 
 -- -- -- -- -- --
@@ -498,6 +480,7 @@ function initGame()
 	initPacman()
 	gridOffsetX = (areaX * 0.5) - (gridX * gridSize * 0.5) + offsetX
 	gridOffsetY = (areaY * 0.5) - (gridY * gridSize * 0.5) + offsetY
+	initPause()
 end
 
 -- DRAW FUNCTIONS --
@@ -843,13 +826,102 @@ function pacmanChangeDirection()
 end
 
 function updateGame()
-	if isEscPressed == true then
-		love.event.push( 'quit' )
+	menuTimerWait()
+	if isEscPressed and menuEnabled then
+		gameMode = "pause"
+		menuTimer = 0
 	end
 	updatePacman()
+	menuTimerAdd()
 end
 
+-- -- -- -- -- --
+-- PAUSE --
+-- -- -- -- -- --
 
+local pauseOffsetX
+local pauseOffsetY
+local pauseSizeX
+local pauseSizeY
+
+function initPause()
+	pauseOffsetX = gridOffsetX + 6 * gridSize
+	pauseOffsetY = gridOffsetY + 10 * gridSize
+	pauseSizeX = gridX * gridSize - 2 * 6 * gridSize
+	pauseSizeY = gridY * gridSize - 2 * 10 * gridSize
+end
+
+-- DRAW FUNCTIONS --
+
+function drawPause()
+	drawGame()
+	love.graphics.setColor(0, 0, 0, 100)
+	love.graphics.rectangle("fill", 0, 0, resolutions[activeResolution].x, resolutions[activeResolution].y)
+	love.graphics.setColor(0, 0, 0, 255)
+	love.graphics.rectangle("fill", pauseOffsetX, pauseOffsetY, pauseSizeX, pauseSizeY)
+
+	white()
+	love.graphics.setFont(fontMedium)
+	love.graphics.print("PAUSE", pauseOffsetX+30, pauseOffsetY+20)
+	love.graphics.setFont(fontSmallMedium)
+	if menuActive == 1 then red() else white() end
+	love.graphics.print("RETURN TO GAME", pauseOffsetX+30, pauseOffsetY+80)
+	if menuActive == 2 then red() else white() end
+	love.graphics.print("RETURN TO MENU", pauseOffsetX+30, pauseOffsetY+130)
+	if menuActive == 3 then red() else white() end
+	love.graphics.print("QUIT GAME", pauseOffsetX+30, pauseOffsetY+180)
+	white()
+	love.graphics.setFont(fontSmall)
+	love.graphics.print("Press space to toggle dev mode", pauseOffsetX+30, pauseOffsetY+220)
+end
+
+-- UPDATE FUNCTIONS --
+
+function updatePause()
+	menuTimerWait()
+	if isSpacePressed and menuEnabled then
+		if debugMode then
+			debugMode = false
+		else
+			debugMode = true
+		end
+		menuTimer = 0
+	end
+	if isEscPressed and menuEnabled then
+		gameMode = "game"
+		menuTimer = 0
+		resetMenu()
+	end
+	if isUpPressed and (menuActive > 1) then
+		if menuEnabled then
+			menuActive = menuActive - 1
+			menuTimer = 0
+		end
+	end
+	if isDownPressed and (menuActive < menuPositions) then
+		if menuEnabled then
+			menuActive = menuActive + 1
+			menuTimer = 0
+		end
+	end
+	if isEnterPressed and menuEnabled then
+		if menuActive == 1 then
+			gameMode = "game"
+			menuTimer = 0
+			resetMenu()
+		end
+		if menuActive == 2 then
+			gameMode = "menu"
+			menuMode = "main"
+			menuPositions = 4
+			resetMenu()
+		end
+		if menuActive == 3 then
+			love.event.push( 'quit' )
+		end
+	end
+	menuTimerAdd()
+end
 
 -- LUA DEFAULT FUNCTIONS --
 
