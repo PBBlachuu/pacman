@@ -354,6 +354,7 @@ end
 -- -- -- -- -- --
 
 local pacman
+local tunnel
 local mapSizeX
 local mapSizeY
 local gridSize = 24
@@ -418,6 +419,14 @@ function initMap()
     		k = k + 1
     	end
 	end
+
+	tunnel = {}
+	tunnel[1] = {}
+	tunnel[2] = {}
+	tunnel[1].x = 1
+	tunnel[1].y = 13
+	tunnel[2].x = 26
+	tunnel[2].y = 13
 end
 
 function initGame()
@@ -588,6 +597,23 @@ function updatePacman()
 		pacman.nextDirectionText = "right"
 	end
 
+	-- check if pacman reaches a tunnel --
+
+	if (pacman.mapX == tunnel[1].x) and (pacman.mapY == tunnel[1].y) then
+		pacman.mapX = tunnel[2].x - 1
+		pacman.mapY = tunnel[2].y
+		pacman.x = pacman.mapX * gridSize + gridSize * 0.5
+		pacman.y = pacman.mapY * gridSize + gridSize * 0.5
+	end
+
+	if (pacman.mapX == tunnel[2].x) and (pacman.mapY == tunnel[2].y) then
+		pacman.mapX = tunnel[1].x + 1
+		pacman.mapY = tunnel[1].y
+		pacman.x = pacman.mapX * gridSize + gridSize * 0.5
+		pacman.y = pacman.mapY * gridSize + gridSize * 0.5
+	end
+
+
 	-- chceck if left/right/up/down free --
 	pacman.upFree = false
 	pacman.downFree = false
@@ -620,10 +646,11 @@ function updatePacman()
 		pacman.mapY = pacman.mapY + 1
 	end
 
+	-- calculate pacman movement --
+
 	pacman.movement = delta * pacman.speed
 
-	--if (pacman.direction == 4) and (pacman.leftFree == true) then
-	--	pacman.
+	-- check if pacman can move --
 
 	if pacman.direction == 1 then
 		if pacman.upFree then
@@ -661,6 +688,8 @@ function updatePacman()
 		end
 	end
 
+	-- check if pacman can change direction and if he can, do so --
+
 	if pacman.direction ~= pacman.nextDirection then
 		if (math.abs(pacman.x - (pacman.mapX * gridSize + 0.5 * gridSize)) < 2.5) and (math.abs(pacman.y - (pacman.mapY * gridSize + 0.5 * gridSize)) < 2.5) then
 			if (pacman.nextDirection == 1) and pacman.upFree then
@@ -677,6 +706,9 @@ function updatePacman()
 			end
 		end
 	end
+
+	
+
 end
 
 function updateGame()
@@ -688,6 +720,7 @@ end
 
 function pacmanChangeDirection()
 	pacman.direction = pacman.nextDirection
+	pacman.directionText = pacman.nextDirectionText
 	pacman.x = pacman.mapX * gridSize + gridSize * 0.5
 	pacman.y = pacman.mapY * gridSize + gridSize * 0.5
 end
