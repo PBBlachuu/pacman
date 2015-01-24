@@ -368,7 +368,7 @@ function initPacman()
 	pacman.mapY = 16
 	pacman.x = pacman.mapX * gridSize + gridSize * 0.5
 	pacman.y = pacman.mapY * gridSize + gridSize * 0.5
-	pacman.speed = 70
+	pacman.speed = 130
 	pacman.direction = 4
 	pacman.directionText = "left"
 	pacman.nextDirection = 4
@@ -570,7 +570,23 @@ end
 -- UPDATE FUNCTIONS --
 
 function updatePacman()
-	
+	-- update input --
+	if isUpPressed then
+		pacman.nextDirection = 1
+		pacman.nextDirectionText = "up"		
+	end
+	if isDownPressed then
+		pacman.nextDirection = 3
+		pacman.nextDirectionText = "down"
+	end
+	if isLeftPressed then
+		pacman.nextDirection = 4
+		pacman.nextDirectionText = "left"
+	end
+	if isRightPressed then
+		pacman.nextDirection = 2
+		pacman.nextDirectionText = "right"
+	end
 
 	-- chceck if left/right/up/down free --
 	pacman.upFree = false
@@ -609,10 +625,7 @@ function updatePacman()
 	--if (pacman.direction == 4) and (pacman.leftFree == true) then
 	--	pacman.
 
-	-- update input --
-	if isUpPressed then
-		--pacman.nextDirection = 1
-		--pacman.nextDirectionText = "up"
+	if pacman.direction == 1 then
 		if pacman.upFree then
 			pacman.y = pacman.y - pacman.movement
 		end
@@ -620,9 +633,8 @@ function updatePacman()
 			pacman.y = pacman.y - pacman.movement
 		end
 	end
-	if isDownPressed then
-		--pacman.nextDirection = 3
-		--pacman.nextDirectionText = "down"
+
+	if pacman.direction == 3 then
 		if pacman.downFree then
 			pacman.y = pacman.y + pacman.movement
 		end
@@ -630,19 +642,8 @@ function updatePacman()
 			pacman.y = pacman.y + pacman.movement
 		end
 	end
-	if isLeftPressed then
-		--pacman.nextDirection = 4
-		--pacman.nextDirectionText = "left"
-		if pacman.leftFree then
-			pacman.x = pacman.x - pacman.movement
-		end
-		if pacman.x > (pacman.mapX * gridSize + 0.5 * gridSize) then
-			pacman.x = pacman.x - pacman.movement
-		end
-	end
-	if isRightPressed then
-		--pacman.nextDirection = 2
-		--pacman.nextDirectionText = "right"
+
+	if pacman.direction == 2 then
 		if pacman.rightFree then
 			pacman.x = pacman.x + pacman.movement
 		end
@@ -651,6 +652,31 @@ function updatePacman()
 		end
 	end
 
+	if pacman.direction == 4 then
+		if pacman.leftFree then
+			pacman.x = pacman.x - pacman.movement
+		end
+		if pacman.x > (pacman.mapX * gridSize + 0.5 * gridSize) then
+			pacman.x = pacman.x - pacman.movement
+		end
+	end
+
+	if pacman.direction ~= pacman.nextDirection then
+		if (math.abs(pacman.x - (pacman.mapX * gridSize + 0.5 * gridSize)) < 2.5) and (math.abs(pacman.y - (pacman.mapY * gridSize + 0.5 * gridSize)) < 2.5) then
+			if (pacman.nextDirection == 1) and pacman.upFree then
+				pacmanChangeDirection()
+			end
+			if (pacman.nextDirection == 3) and pacman.downFree then
+				pacmanChangeDirection()
+			end
+			if (pacman.nextDirection == 2) and pacman.rightFree then
+				pacmanChangeDirection()
+			end
+			if (pacman.nextDirection == 4) and pacman.leftFree then
+				pacmanChangeDirection()
+			end
+		end
+	end
 end
 
 function updateGame()
@@ -658,6 +684,12 @@ function updateGame()
 		love.event.push( 'quit' )
 	end
 	updatePacman()
+end
+
+function pacmanChangeDirection()
+	pacman.direction = pacman.nextDirection
+	pacman.x = pacman.mapX * gridSize + gridSize * 0.5
+	pacman.y = pacman.mapY * gridSize + gridSize * 0.5
 end
 
 
