@@ -586,6 +586,7 @@ function initGhosts()
 		ghosts[i].leftFree = false
 		ghosts[i].rightFree = false
 		ghosts[i].direction = 1
+		ghosts[i].nextDirection = 1
 		ghosts[i].speed = 100
 	end
 	resetGhostsPosition()
@@ -595,18 +596,22 @@ function resetGhostsPosition()
 	ghosts[1].mapX = 12
 	ghosts[1].mapY = 10
 	ghosts[1].direction = 4
+	ghosts[1].nextDirection = 4
 	--
 	ghosts[2].mapX = 15
 	ghosts[2].mapY = 10
 	ghosts[2].direction = 2
+	ghosts[2].nextDirection = 2
 	--
 	ghosts[3].mapX = 13
 	ghosts[3].mapY = 13
 	ghosts[3].direction = 1
+	ghosts[3].nextDirection = 1
 	--
 	ghosts[4].mapX = 14
 	ghosts[4].mapY = 13
 	ghosts[4].direction = 1
+	ghosts[4].nextDirection = 1
 	for i = 1, 4, 1 do
 		ghosts[i].x = ghosts[i].mapX * gridSize + gridSize * 0.5
 		ghosts[i].y = ghosts[i].mapY * gridSize + gridSize * 0.5
@@ -941,6 +946,12 @@ function updatePacman()
 		pacman.rightFree = true
 	end
 
+	if pacman.mapY == 10 then
+		if (pacman.mapX == 13) or (pacman.mapY == 14) then
+			pacman.downFree = false
+		end
+	end
+
 	-- check if pacman out of his box --
 	if pacman.x < (pacman.mapX * gridSize + gridSize) then
 		pacman.mapX = pacman.mapX - 1
@@ -1123,6 +1134,20 @@ function updateGhosts()
 			ghosts[i].rightFree = true
 		end
 
+		if (ghosts[i].mapX == 21) and (ghosts[i].mapY == 13) then
+			ghosts[i].rightFree = false
+		end
+
+		if (ghosts[i].mapX == 6) and (ghosts[i].mapY == 13) then
+			ghosts[i].leftFree = false
+		end
+
+		if ghosts[i].mapY == 10 then
+			if (ghosts[i].mapX == 13) or (ghosts[i].mapX == 14) then
+				ghosts[i].downFree = false
+			end
+		end
+
 		-- check if ghost out of his box --
 		if ghosts[i].x < (ghosts[i].mapX * gridSize + gridSize) then
 			ghosts[i].mapX = ghosts[i].mapX - 1
@@ -1138,42 +1163,99 @@ function updateGhosts()
 		end
 
 		-- make ghosts move --
-		local movement = ghosts[i].speed * delta
-		if ghosts[i].direction == 1 then
-			if ghosts[i].upFree then
-				ghosts[i].y = ghosts[i].y - movement
-			end
-			if ghosts[i].y > (ghosts[i].mapY * gridSize + 0.5 * gridSize) then
-				ghosts[i].y = ghosts[i].y - movement
-			end
-		end
-		if ghosts[i].direction == 3 then
-			if ghosts[i].downFree then
-				ghosts[i].y = ghosts[i].y + movement
-			end
-			if ghosts[i].y < (ghosts[i].mapY * gridSize + 0.5 * gridSize) then
-				ghosts[i].y = ghosts[i].y + movement
-			end
-		end
-		if ghosts[i].direction == 2 then
-			if ghosts[i].rightFree then
-				ghosts[i].x = ghosts[i].x + movement
-			end
-			if ghosts[i].x < (ghosts[i].mapX * gridSize + 0.5 * gridSize) then
-				ghosts[i].x = ghosts[i].x + movement
-			end
-		end
-		if ghosts[i].direction == 4 then
-			if ghosts[i].leftFree then
-				ghosts[i].x = ghosts[i].x - movement
-			end
-			if ghosts[i].x > (ghosts[i].mapX * gridSize + 0.5 * gridSize) then
-				ghosts[i].x = ghosts[i].x - movement
+		if gameTimer > 4 then
+			moveGhosts(i)
+		else
+			if i < 3 then
+				moveGhosts(i)
 			end
 		end
 
-
+		local ghostXdistance = math.abs(ghosts[i].x - (ghosts[i].mapX * gridSize + 0.5 * gridSize))
+		local ghostYdistance = math.abs(ghosts[i].y - (ghosts[i].mapY * gridSize + 0.5 * gridSize))
+		if (ghostXdistance < 2.5) and (ghostYdistance < 2.5) then
+			if (ghosts[i].direction == 1) and (ghosts[i].upFree == false) then
+				randomGhostNexDirection(i)
+				ghostsChangeDirection(i)
+			end
+			if (ghosts[i].direction == 3) and (ghosts[i].downFree == false) then
+				randomGhostNexDirection(i)
+				ghostsChangeDirection(i)
+			end
+			if (ghosts[i].direction == 4) and (ghosts[i].leftFree == false) then
+				randomGhostNexDirection(i)
+				ghostsChangeDirection(i)
+			end
+			if (ghosts[i].direction == 2) and (ghosts[i].rightFree == false) then
+				randomGhostNexDirection(i)
+				ghostsChangeDirection(i)
+			end
+		end
+		
 	end
+end
+
+function randomGhostNexDirection(ghost)
+	local nextDirection
+	local forbiddenDirection
+	if ghosts[ghost].direction == 1 then
+		forbiddenDirection = 3
+	end
+	if ghosts[ghost].direction == 2 then
+		forbiddenDirection = 4
+	end
+	if ghosts[ghost].direction == 3 then
+		forbiddenDirection = 1
+	end
+	if ghosts[ghost].direction == 4 then
+		forbiddenDirection = 2
+	end
+	repeat
+		nextDirection = math.random(1, 4)
+	until (nextDirection ~= ghosts[ghost].nextDirection) and (nextDirection ~= forbiddenDirection)
+	ghosts[ghost].nextDirection = nextDirection
+end
+
+function moveGhosts(ghost)
+	local movement = ghosts[ghost].speed * delta
+	if ghosts[ghost].direction == 1 then
+		if ghosts[ghost].upFree then
+			ghosts[ghost].y = ghosts[ghost].y - movement
+		end
+		if ghosts[ghost].y > (ghosts[ghost].mapY * gridSize + 0.5 * gridSize) then
+			ghosts[ghost].y = ghosts[ghost].y - movement
+		end
+	end
+	if ghosts[ghost].direction == 3 then
+			if ghosts[ghost].downFree then
+			ghosts[ghost].y = ghosts[ghost].y + movement
+		end
+		if ghosts[ghost].y < (ghosts[ghost].mapY * gridSize + 0.5 * gridSize) then
+			ghosts[ghost].y = ghosts[ghost].y + movement
+		end
+	end
+	if ghosts[ghost].direction == 2 then
+		if ghosts[ghost].rightFree then
+			ghosts[ghost].x = ghosts[ghost].x + movement
+		end
+		if ghosts[ghost].x < (ghosts[ghost].mapX * gridSize + 0.5 * gridSize) then
+			ghosts[ghost].x = ghosts[ghost].x + movement
+		end
+	end
+	if ghosts[ghost].direction == 4 then
+		if ghosts[ghost].leftFree then
+			ghosts[ghost].x = ghosts[ghost].x - movement
+		end
+		if ghosts[ghost].x > (ghosts[ghost].mapX * gridSize + 0.5 * gridSize) then
+			ghosts[ghost].x = ghosts[ghost].x - movement
+		end
+	end
+end
+
+function ghostsChangeDirection(ghost)
+	ghosts[ghost].direction = ghosts[ghost].nextDirection
+	ghosts[ghost].x = ghosts[ghost].mapX * gridSize + gridSize * 0.5
+	ghosts[ghost].y = ghosts[ghost].mapY * gridSize + gridSize * 0.5
 end
 
 function updateGame()
