@@ -40,6 +40,7 @@ local fontSmall
 local fontSmallMedium
 
 -- images --
+local pacmanSprites
 
 -- game variables --
 
@@ -48,6 +49,24 @@ function loadStuff()
 	fontMedium = love.graphics.newFont(36)
 	fontSmall = love.graphics.newFont(14)
 	fontSmallMedium = love.graphics.newFont(28)
+
+	pacmanSprites = {}
+	pacmanSprites[1] = {}
+	pacmanSprites[2] = {}
+	pacmanSprites[3] = {}
+	pacmanSprites[4] = {}
+	pacmanSprites[1][1] = love.graphics.newImage("images/pacman/up/pacman1up.png")
+	pacmanSprites[1][2] = love.graphics.newImage("images/pacman/up/pacman2up.png")
+	pacmanSprites[1][3] = love.graphics.newImage("images/pacman/up/pacman3up.png")
+	pacmanSprites[2][1] = love.graphics.newImage("images/pacman/right/pacman1right.png")
+	pacmanSprites[2][2] = love.graphics.newImage("images/pacman/right/pacman2right.png")
+	pacmanSprites[2][3] = love.graphics.newImage("images/pacman/right/pacman3right.png")
+	pacmanSprites[3][1] = love.graphics.newImage("images/pacman/down/pacman1down.png")
+	pacmanSprites[3][2] = love.graphics.newImage("images/pacman/down/pacman2down.png")
+	pacmanSprites[3][3] = love.graphics.newImage("images/pacman/down/pacman3down.png")
+	pacmanSprites[4][1] = love.graphics.newImage("images/pacman/left/pacman1left.png")
+	pacmanSprites[4][2] = love.graphics.newImage("images/pacman/left/pacman2left.png")
+	pacmanSprites[4][3] = love.graphics.newImage("images/pacman/left/pacman3left.png")
 
 	resetMenu()
 
@@ -360,28 +379,35 @@ local gridOffsetX
 local gridOffsetY
 local dotSize = 0.14 * gridSize
 local score = 0
+local lives = 3
 local specialDotMaxTime = 3
 
 function initPacman()
 	pacman = {}
 	pacman.mapX = 13
 	pacman.mapY = 16
+	pacman.lastMapX = pacman.mapX
+	pacman.lastMapY = pacman.mapY
 	pacman.x = pacman.mapX * gridSize + gridSize * 0.5
 	pacman.y = pacman.mapY * gridSize + gridSize * 0.5
-	pacman.speed = 130
+	pacman.speed = 140
 	pacman.size = gridSize * 0.5 - 4
+	pacman.sprite = 1
+	pacman.spriteInc = true
 	pacman.direction = 4
 	pacman.directionText = "left"
 	pacman.nextDirection = 4
 	pacman.nextDirectionText = "left"
 	pacman.movement = 0
 	pacman.distance = 0
+	pacman.image = 1
 	pacman.specialDotActive = false
 	pacman.specialDotTimer = 0
 	pacman.upFree = false
 	pacman.downFree = false
 	pacman.leftFree = false
 	pacman.rightFree = false
+	pacman.sameSpriteTimer = 0
 	if map[pacman.mapX][pacman.mapY-1] == false then
 		pacman.upFree = true
 	end
@@ -480,6 +506,8 @@ function initGame()
 	initPacman()
 	gridOffsetX = (areaX * 0.5) - (gridX * gridSize * 0.5) + offsetX
 	gridOffsetY = (areaY * 0.5) - (gridY * gridSize * 0.5) + offsetY
+	pacman.lastMapX = pacman.mapX
+	pacman.lastMapY = pacman.mapY
 	initPause()
 end
 
@@ -539,8 +567,11 @@ function drawGrid()
 end
 
 function drawPacman()
-	yellow()
-	love.graphics.circle("fill", pacman.x+gridOffsetX, pacman.y+gridOffsetY, pacman.size, 50)
+	--yellow()
+	--love.graphics.circle("fill", pacman.x+gridOffsetX, pacman.y+gridOffsetY, pacman.size, 50)
+	white()
+	--love.graphics.draw(pacmanSprites[pacman.sprite], pacman.x+gridOffsetX-8.5, pacman.y+gridOffsetY-8.5) --math.rad(90*(pacman.direction-1)))
+	love.graphics.draw(pacmanSprites[pacman.direction][pacman.sprite], pacman.x+gridOffsetX-8.5, pacman.y+gridOffsetY-8.5)
 	drawPacmanDebug()
 end
 
@@ -644,11 +675,21 @@ function drawSpecialDots()
 	end
 end
 
+function drawScore()
+	--
+end
+
+function drawLives()
+	--
+end
+
 
 function drawGame()
 	drawMaze()
 	drawDots()
 	drawSpecialDots()
+	drawScore()
+	drawLives()
 	drawPacman()
 	drawGrid()
 	drawGameDebugInfo()
@@ -812,11 +853,48 @@ function updatePacman()
 		end
 	end
 
+	-- calculate pacman distance and update sprite --
+	if (pacman.lastMapX > pacman.mapX) or (pacman.lastMapX < pacman.mapX) then
+		pacman.lastMapX = pacman.mapX
+		increasePacmanDistance()
+		increasePacmanSprite()
+		pacman.sameSpriteTimer = 0
+	end
+	if (pacman.lastMapY > pacman.mapY) or (pacman.lastMapY < pacman.mapY) then
+		pacman.lastMapY = pacman.mapY
+		increasePacmanDistance()
+		increasePacmanSprite()
+		pacman.sameSpriteTimer = 0
+	end
+	if (pacman.lastMapX == pacman.mapX) and (pacman.lastMapY == pacman.mapY) then
+		pacman.sameSpriteTimer = pacman.sameSpriteTimer + delta
+	end
+	if pacman.sameSpriteTimer > 0.2 then
+		pacman.sprite = 1
+		pacman.spriteInc = true
+	end
+
 end
 
 function increasePacmanDistance()
 	pacman.distance = pacman.distance + 1
 end
+
+function increasePacmanSprite()
+	if pacman.sprite == 3 then
+		pacman.spriteInc = false
+	end
+	if pacman.sprite == 1 then
+		pacman.spriteInc = true
+	end
+	if pacman.spriteInc then
+		pacman.sprite = pacman.sprite + 1
+	end
+	if pacman.spriteInc == false then
+		pacman.sprite = pacman.sprite - 1
+	end
+end
+
 
 function pacmanChangeDirection()
 	pacman.direction = pacman.nextDirection
