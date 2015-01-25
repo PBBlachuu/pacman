@@ -38,7 +38,6 @@ local fontBig
 local fontMedium
 local fontSmall
 local fontSmallMedium
-local fontScore
 
 -- images --
 local pacmanSprites
@@ -50,7 +49,6 @@ function loadStuff()
 	fontMedium = love.graphics.newFont(36)
 	fontSmall = love.graphics.newFont(14)
 	fontSmallMedium = love.graphics.newFont(28)
-	fontScore = love.graphics.newFont("fonts/arcadeclassic.TTF", 28)
 
 	pacmanSprites = {}
 	pacmanSprites[1] = {}
@@ -379,7 +377,6 @@ end
 -- -- -- -- -- --
 
 local pacman
-local ghosts
 local tunnel
 local mapSizeX
 local mapSizeY
@@ -391,9 +388,7 @@ local gridOffsetY
 local dotSize = 0.14 * gridSize
 local score = 0
 local lives = 3
-local level = 1
 local specialDotMaxTime = 3
-local gameTimer = 0
 
 function initPacman()
 	pacman = {}
@@ -551,83 +546,14 @@ function initMap()
 	specialDots[4].active = true
 end
 
-function resetPacmanPosition()
-	pacman.mapX = 13
-	pacman.mapY = 16
-	pacman.lastMapX = pacman.mapX
-	pacman.lastMapY = pacman.mapY
-	pacman.x = pacman.mapX * gridSize + gridSize * 0.5
-	pacman.y = pacman.mapY * gridSize + gridSize * 0.5
-	pacman.sprite = 1
-	pacman.spriteInc = true
-	pacman.direction = 4
-	pacman.directionText = "left"
-	pacman.nextDirection = 4
-	pacman.nextDirectionText = "left"
-	pacman.movement = 0
-	pacman.distance = 0
-	pacman.image = 1
-	pacman.specialDotActive = false
-	pacman.specialDotTimer = 0
-end
-
-function initGhosts()
-	ghosts = {}
-	for i = 1, 4, 1 do
-		ghosts[i] = {}
-		ghosts[i].mapX = 0
-		ghosts[i].mapY = 0
-		ghosts[i].x = 0
-		ghosts[i].y = 0
-		ghosts[i].eaten = false
-		ghosts[i].out = false
-		ghosts[i].upFree = false
-		ghosts[i].downFree = false
-		ghosts[i].leftFree = false
-		ghosts[i].rightFree = false
-		ghosts[i].direction = 1
-		ghosts[i].speed = 100
-	end
-	resetGhostsPosition()
-end
-
-function resetGhostsPosition()
-	ghosts[1].mapX = 12
-	ghosts[1].mapY = 10
-	--
-	ghosts[2].mapX = 15
-	ghosts[2].mapY = 10
-	--
-	ghosts[3].mapX = 13
-	ghosts[3].mapY = 13
-	--
-	ghosts[4].mapX = 14
-	ghosts[4].mapY = 13
-	for i = 1, 4, 1 do
-		ghosts[i].x = ghosts[i].mapX * gridSize + gridSize * 0.5
-		ghosts[i].y = ghosts[i].mapY * gridSize + gridSize * 0.5
-		if map[ghosts[i].mapX][(ghosts[i].mapY)-1] == false then
-			ghosts[i].upFree = true
-		end
-		if map[ghosts[i].mapX][(ghosts[i].mapY)+1] == false then
-			ghosts[i].downFree = true
-		end
-		if map[(ghosts[i].mapX)-1][ghosts[i].mapY] == false then
-			ghosts[i].leftFree = true
-		end
-		if map[(ghosts[i].mapX)+1][ghosts[i].mapY] == false then
-			ghosts[i].rightFree = true
-		end
-	end
-end
-
 function initGame()
 	gameMode = "game"
 	initMap()
 	initPacman()
-	initGhosts()
 	gridOffsetX = (areaX * 0.5) - (gridX * gridSize * 0.5) + offsetX
 	gridOffsetY = (areaY * 0.5) - (gridY * gridSize * 0.5) + offsetY
+	pacman.lastMapX = pacman.mapX
+	pacman.lastMapY = pacman.mapY
 	initPause()
 end
 
@@ -687,7 +613,10 @@ function drawGrid()
 end
 
 function drawPacman()
+	--yellow()
+	--love.graphics.circle("fill", pacman.x+gridOffsetX, pacman.y+gridOffsetY, pacman.size, 50)
 	white()
+	--love.graphics.draw(pacmanSprites[pacman.sprite], pacman.x+gridOffsetX-8.5, pacman.y+gridOffsetY-8.5) --math.rad(90*(pacman.direction-1)))
 	love.graphics.draw(pacmanSprites[pacman.direction][pacman.sprite], pacman.x+gridOffsetX-8.5, pacman.y+gridOffsetY-8.5)
 	drawPacmanDebug()
 end
@@ -753,54 +682,12 @@ function drawPacmanDebug()
 	end
 end
 
-function drawGhosts()
-	red()
-	for i = 1, 4, 1 do
-		love.graphics.circle("fill", ghosts[i].x + gridOffsetX, ghosts[i].y + gridOffsetY, gridSize*0.5*0.8, 100)
-	end
-	drawGhostsDebug()
-end
-
-function drawGhostsDebug()
-	if debugMode then
-		for i = 1, 4, 1 do
-			if ghosts[i].upFree then
-   				greenAlpha()
-   				love.graphics.rectangle("fill", ghosts[i].mapX * gridSize + gridOffsetX, (ghosts[i].mapY - 1) * gridSize + gridOffsetY, gridSize, gridSize)
-   			else
-	   			redAlpha()
-	   			love.graphics.rectangle("fill", ghosts[i].mapX * gridSize + gridOffsetX, (ghosts[i].mapY - 1) * gridSize + gridOffsetY, gridSize, gridSize)
-	   		end
-	   		if ghosts[i].downFree then
-	   			greenAlpha()
-	   			love.graphics.rectangle("fill", ghosts[i].mapX * gridSize + gridOffsetX, (ghosts[i].mapY + 1) * gridSize + gridOffsetY, gridSize, gridSize)
-	   		else
-	   			redAlpha()
-	   			love.graphics.rectangle("fill", ghosts[i].mapX * gridSize + gridOffsetX, (ghosts[i].mapY + 1) * gridSize + gridOffsetY, gridSize, gridSize)
-	   		end
-	   		if ghosts[i].leftFree then
-	   			greenAlpha()
-	   			love.graphics.rectangle("fill", (ghosts[i].mapX - 1) * gridSize + gridOffsetX, ghosts[i].mapY * gridSize + gridOffsetY, gridSize, gridSize)
-	   		else
-	   			redAlpha()
-	   			love.graphics.rectangle("fill", (ghosts[i].mapX - 1) * gridSize + gridOffsetX, ghosts[i].mapY * gridSize + gridOffsetY, gridSize, gridSize)
-	   		end
-	   		if ghosts[i].rightFree then
-	   			greenAlpha()
-	   			love.graphics.rectangle("fill", (ghosts[i].mapX + 1) * gridSize + gridOffsetX, ghosts[i].mapY * gridSize + gridOffsetY, gridSize, gridSize)
-	   		else
-	   			redAlpha()
-	   			love.graphics.rectangle("fill", (ghosts[i].mapX + 1) * gridSize + gridOffsetX, ghosts[i].mapY * gridSize + gridOffsetY, gridSize, gridSize)
-	   		end
-		end
-	end
-end
-
 function drawMaze()
 	white()
 	for i = 0, gridX, 1 do
 		for j = 0, gridY, 1 do
 			if corners[i][j] > 0 then
+				--love.graphics.rectangle("fill", i * gridSize + gridOffsetX, j * gridSize + gridOffsetY, gridSize, gridSize)
 				love.graphics.draw(cornerSprites[corners[i][j]], i * gridSize + gridOffsetX, j * gridSize + gridOffsetY)
 			end
 		end
@@ -844,19 +731,11 @@ function drawSpecialDots()
 end
 
 function drawScore()
-	love.graphics.setFont(fontScore)
-	white()
-	love.graphics.print("Score ".. tostring(score), gridOffsetX + (gridX - 8) * gridSize, gridOffsetY - 30)
-	love.graphics.print("Level ".. tostring(level), gridOffsetX + gridSize, gridOffsetY - 30)
+	--
 end
 
 function drawLives()
-	if lives > 1 then
-		for i = 1, lives-1, 1 do
-			white()
-			love.graphics.draw(pacmanSprites[4][2], gridOffsetX + i * 20, gridOffsetY + gridY * gridSize + 15)
-		end
-	end
+	--
 end
 
 
@@ -866,7 +745,6 @@ function drawGame()
 	drawSpecialDots()
 	drawScore()
 	drawLives()
-	drawGhosts()
 	drawPacman()
 	drawGrid()
 	drawGameDebugInfo()
@@ -1016,7 +894,6 @@ function updatePacman()
 			if specialDots[i].active then
 				specialDots[i].active = false
 				pacman.specialDotActive = true
-				score = score + 10
 			end
 		end
 	end
@@ -1081,12 +958,6 @@ function pacmanChangeDirection()
 	pacman.y = pacman.mapY * gridSize + gridSize * 0.5
 end
 
-function updateGhosts()
-	for i = 1, 4, 1 do
-		--
-	end
-end
-
 function updateGame()
 	menuTimerWait()
 	if isEscPressed and menuEnabled then
@@ -1095,7 +966,6 @@ function updateGame()
 	end
 	updatePacman()
 	menuTimerAdd()
-	gameTimer = gameTimer + delta
 end
 
 -- -- -- -- -- --
@@ -1120,8 +990,6 @@ function drawPause()
 	drawGame()
 	love.graphics.setColor(0, 0, 0, 100)
 	love.graphics.rectangle("fill", 0, 0, resolutions[activeResolution].x, resolutions[activeResolution].y)
-	red()
-	love.graphics.rectangle("fill", pauseOffsetX-1, pauseOffsetY-1, pauseSizeX+2, pauseSizeY+2)
 	love.graphics.setColor(0, 0, 0, 255)
 	love.graphics.rectangle("fill", pauseOffsetX, pauseOffsetY, pauseSizeX, pauseSizeY)
 
@@ -1132,9 +1000,9 @@ function drawPause()
 	if menuActive == 1 then red() else white() end
 	love.graphics.print("RETURN TO GAME", pauseOffsetX+30, pauseOffsetY+80)
 	if menuActive == 2 then red() else white() end
-	love.graphics.print("RETURN TO MENU", pauseOffsetX+30, pauseOffsetY+120)
+	love.graphics.print("RETURN TO MENU", pauseOffsetX+30, pauseOffsetY+130)
 	if menuActive == 3 then red() else white() end
-	love.graphics.print("QUIT GAME", pauseOffsetX+30, pauseOffsetY+160)
+	love.graphics.print("QUIT GAME", pauseOffsetX+30, pauseOffsetY+180)
 	white()
 	love.graphics.setFont(fontSmall)
 	love.graphics.print("Press space to toggle dev mode", pauseOffsetX+30, pauseOffsetY+220)
