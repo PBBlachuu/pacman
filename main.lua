@@ -68,6 +68,14 @@ function loadStuff()
 	pacmanSprites[4][2] = love.graphics.newImage("images/pacman/left/pacman2left.png")
 	pacmanSprites[4][3] = love.graphics.newImage("images/pacman/left/pacman3left.png")
 
+	cornerSprites = {}
+	cornerSprites[1] = love.graphics.newImage("images/maze/1.png")
+	cornerSprites[2] = love.graphics.newImage("images/maze/2.png")
+	cornerSprites[3] = love.graphics.newImage("images/maze/3.png")
+	cornerSprites[4] = love.graphics.newImage("images/maze/4.png")
+	cornerSprites[5] = love.graphics.newImage("images/maze/5.png")
+	cornerSprites[6] = love.graphics.newImage("images/maze/6.png")
+
 	resetMenu()
 
 	createResolutions()
@@ -218,7 +226,7 @@ function drawMainMenu()
 	love.graphics.setBackgroundColor(menuBgR, menuBgG, menuBgB)
 	love.graphics.setColor(255, 255, 255, 255)
 	love.graphics.setFont(fontBig)
-	love.graphics.print("PACMAN 0.1 alpha", offsetX+160, offsetY+100)
+	love.graphics.print("PACMAN 0.2", offsetX+160, offsetY+100)
 	love.graphics.setFont(fontMedium)
 	if menuActive == 1 then red() else white() end
 	love.graphics.print("NEW GAME", offsetX+200, offsetY+300)
@@ -473,6 +481,44 @@ function initMap()
     	end
 	end
 
+	contents, size = love.filesystem.read("maps/corners.map", gridX*gridY )
+	corners = {}
+	for i = 0, gridX, 1 do
+		corners[i] = {}
+		for j = 0, gridY, 1 do
+			corners[i][j] = 0
+		end
+	end
+
+	j = 0
+	k = 0
+	for i = 1, #contents do
+    	local c = contents:sub(i,i)
+    	if c == "1" then
+    		corners[j][k] = 1
+    	end
+    	if c == "2" then
+    		corners[j][k] = 2
+    	end
+    	if c == "3" then
+    		corners[j][k] = 3
+    	end
+    	if c == "4" then
+    		corners[j][k] = 4
+    	end
+    	if c == "5" then
+    		corners[j][k] = 5
+    	end
+    	if c == "6" then
+    		corners[j][k] = 6
+    	end
+    	j = j + 1
+    	if j == gridX then
+    		j = 0
+    		k = k + 1
+    	end
+	end
+
 	tunnel = {}
 	tunnel[1] = {}
 	tunnel[2] = {}
@@ -637,6 +683,15 @@ function drawPacmanDebug()
 end
 
 function drawMaze()
+	white()
+	for i = 0, gridX, 1 do
+		for j = 0, gridY, 1 do
+			if corners[i][j] > 0 then
+				--love.graphics.rectangle("fill", i * gridSize + gridOffsetX, j * gridSize + gridOffsetY, gridSize, gridSize)
+				love.graphics.draw(cornerSprites[corners[i][j]], i * gridSize + gridOffsetX, j * gridSize + gridOffsetY)
+			end
+		end
+	end	
 	drawMazeDebug()
 end
 
