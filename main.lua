@@ -91,7 +91,7 @@ function loadStuff()
 	love.keyboard.setKeyRepeat(true)
 end
 
--- game settings functions --
+-- game settings functionslives --
 
 function createResolutions()
 	-- creates a table of accepted resolutions --
@@ -390,7 +390,7 @@ local gridOffsetX
 local gridOffsetY
 local dotSize = 0.14 * gridSize
 local score = 0
-local lives = 3
+local lives
 local level = 1
 local specialDotMaxTime = 3
 local gameTimer = 0
@@ -594,15 +594,19 @@ end
 function resetGhostsPosition()
 	ghosts[1].mapX = 12
 	ghosts[1].mapY = 10
+	ghosts[1].direction = 4
 	--
 	ghosts[2].mapX = 15
 	ghosts[2].mapY = 10
+	ghosts[2].direction = 2
 	--
 	ghosts[3].mapX = 13
 	ghosts[3].mapY = 13
+	ghosts[3].direction = 1
 	--
 	ghosts[4].mapX = 14
 	ghosts[4].mapY = 13
+	ghosts[4].direction = 1
 	for i = 1, 4, 1 do
 		ghosts[i].x = ghosts[i].mapX * gridSize + gridSize * 0.5
 		ghosts[i].y = ghosts[i].mapY * gridSize + gridSize * 0.5
@@ -622,7 +626,11 @@ function resetGhostsPosition()
 end
 
 function initGame()
-	gameMode = "game"
+	gameMode = "getReady"
+	lives = 3
+	score = 0
+	gameOverTimer = 0
+	getReadyTimer = 0
 	initMap()
 	initPacman()
 	initGhosts()
@@ -640,6 +648,8 @@ function drawGameDebugInfo()
 		white()
 		love.graphics.setFont(fontSmall)
    		love.graphics.print("FPS: "..tostring(love.timer.getFPS( )), 10, debug_counter*debug_offset)
+   		debug_counter = debug_counter + 1
+   		love.graphics.print("Lives: "..tostring(lives), 10, debug_counter*debug_offset)
    		if sound then
    			debug_counter = debug_counter + 1
    			love.graphics.print("Sound: On", 10, debug_counter*debug_offset)
@@ -872,6 +882,8 @@ function drawGame()
 	drawGameDebugInfo()
 end
 
+
+
 -- UPDATE FUNCTIONS --
 
 function updatePacman()
@@ -1083,7 +1095,13 @@ end
 
 function updateGhosts()
 	for i = 1, 4, 1 do
-		--
+		if (ghosts[i].mapX == pacman.mapX) and (ghosts[i].mapY == pacman.mapY) then
+			lives = lives - 1
+			gameMode = "getReady"
+			getReadyTimer = 0
+			resetPacmanPosition()
+			resetGhostsPosition()
+		end
 	end
 end
 
@@ -1094,8 +1112,12 @@ function updateGame()
 		menuTimer = 0
 	end
 	updatePacman()
+	updateGhosts()
 	menuTimerAdd()
 	gameTimer = gameTimer + delta
+	if lives == 0 then
+		gameMode = "gameOver"
+	end
 end
 
 -- -- -- -- -- --
@@ -1106,6 +1128,8 @@ local pauseOffsetX
 local pauseOffsetY
 local pauseSizeX
 local pauseSizeY
+local gameOverTimer = 0
+local getReadyTimer = 0
 
 function initPause()
 	pauseOffsetX = gridOffsetX + 6 * gridSize
@@ -1138,6 +1162,29 @@ function drawPause()
 	white()
 	love.graphics.setFont(fontSmall)
 	love.graphics.print("Press space to toggle dev mode", pauseOffsetX+30, pauseOffsetY+220)
+end
+
+function drawGetReady()
+	drawGame()
+	white()
+	love.graphics.setFont(fontScore)
+	love.graphics.print("GET READY!", gridOffsetX + 270, gridOffsetY + 420)
+end
+
+function drawGameOver()
+	drawGame()
+	love.graphics.setColor(0, 0, 0, 100)
+	love.graphics.rectangle("fill", 0, 0, resolutions[activeResolution].x, resolutions[activeResolution].y)
+	red()
+	love.graphics.rectangle("fill", pauseOffsetX-1, pauseOffsetY-1, pauseSizeX+2, pauseSizeY+2)
+	love.graphics.setColor(0, 0, 0, 255)
+	love.graphics.rectangle("fill", pauseOffsetX, pauseOffsetY, pauseSizeX, pauseSizeY)
+
+	white()
+	love.graphics.setFont(fontMedium)
+	love.graphics.print("GAME OVER", pauseOffsetX+81, pauseOffsetY+100)
+	love.graphics.setFont(fontSmall)
+	love.graphics.print("Press space to return to menu", pauseOffsetX+84, pauseOffsetY+180)
 end
 
 -- UPDATE FUNCTIONS --
@@ -1188,6 +1235,23 @@ function updatePause()
 	menuTimerAdd()
 end
 
+function updateGameOver()
+	if isSpacePressed then
+		gameMode = "menu"
+		menuMode = "main"
+		menuPositions = 4
+		resetMenu()
+	end
+end
+
+function updateGetReady()
+	getReadyTimer = getReadyTimer + delta
+	if getReadyTimer > 2.5 then
+		gameMode = "game"
+		getReadyTimer = 0
+	end
+end
+
 -- LUA DEFAULT FUNCTIONS --
 
 function love.load()
@@ -1205,7 +1269,13 @@ function love.draw()
    	end
    	if gameMode == "pause" then
    		drawPause()
-   	end 	
+   	end 
+   	if gameMode == "getReady" then
+   		drawGetReady()
+   	end
+   	if gameMode == "gameOver" then
+   		drawGameOver()
+   	end	
 end
 
 function love.update(dt)
@@ -1219,6 +1289,12 @@ function love.update(dt)
 	if gameMode == "pause" then
 		updatePause()
 	end
+	if gameMode == "getReady" then
+   		updateGetReady()
+   	end
+   	if gameMode == "gameOver" then
+   		updateGameOver()
+   	end
 end
 
 function love.focus(bool)
