@@ -85,7 +85,7 @@ function loadStuff()
 
 	sound = false
 	changeSoundSetting()
-	debugMode = false
+	debugMode = true
 	changeDebugSetting()
 
 	love.keyboard.setKeyRepeat(true)
@@ -392,8 +392,9 @@ local dotSize = 0.14 * gridSize
 local score = 0
 local lives
 local level = 1
-local specialDotMaxTime = 3
+local specialDotMaxTime = 5
 local gameTimer = 0
+local collectedDots
 
 function initPacman()
 	pacman = {}
@@ -588,6 +589,8 @@ function initGhosts()
 		ghosts[i].direction = 1
 		ghosts[i].nextDirection = 1
 		ghosts[i].speed = 100
+		ghosts[i].normSpeed = 100
+		ghosts[i].slowSpeed = 70
 	end
 	resetGhostsPosition()
 end
@@ -637,6 +640,7 @@ function initGame()
 	gameOverTimer = 0
 	getReadyTimer = 0
 	gameTimer = 0
+	collectedDots = 0
 	initMap()
 	initPacman()
 	initGhosts()
@@ -770,8 +774,17 @@ function drawPacmanDebug()
 end
 
 function drawGhosts()
-	red()
+	
 	for i = 1, 4, 1 do
+		if pacman.specialDotActive == false then
+			red()
+		else
+			if ghosts[i].eaten == true then
+				blue()
+			else
+				white()
+			end
+		end
 		love.graphics.circle("fill", ghosts[i].x + gridOffsetX, ghosts[i].y + gridOffsetY, gridSize*0.5*0.8, 100)
 	end
 	drawGhostsDebug()
@@ -947,7 +960,7 @@ function updatePacman()
 	end
 
 	if pacman.mapY == 10 then
-		if (pacman.mapX == 13) or (pacman.mapY == 14) then
+		if (pacman.mapX == 13) or (pacman.mapX == 14) then
 			pacman.downFree = false
 		end
 	end
@@ -1032,6 +1045,7 @@ function updatePacman()
 	if (dots[pacman.mapX][pacman.mapY] == true) then
 		dots[pacman.mapX][pacman.mapY] = false
 		score = score + 1
+		collectedDots = collectedDots + 1
 	end
 
 	-- check if pacman is on a special dot --
@@ -1050,6 +1064,9 @@ function updatePacman()
 		if pacman.specialDotTimer > specialDotMaxTime then
 			pacman.specialDotTimer = 0
 			pacman.specialDotActive = false
+			for i = 1, 4, 1 do
+				ghosts[i].eaten = false
+			end
 		else
 			pacman.specialDotTimer = pacman.specialDotTimer + delta
 		end
@@ -1107,14 +1124,25 @@ end
 
 function updateGhosts()
 	for i = 1, 4, 1 do
-		if (ghosts[i].mapX == pacman.mapX) and (ghosts[i].mapY == pacman.mapY) then
-			lives = lives - 1
-			gameMode = "getReady"
-			getReadyTimer = 0
-			resetPacmanPosition()
-			resetGhostsPosition()
+		if pacman.specialDotActive == false then
+			ghosts[i].speed = ghosts[i].normSpeed
+			if (ghosts[i].mapX == pacman.mapX) and (ghosts[i].mapY == pacman.mapY) then
+				lives = lives - 1
+				gameMode = "getReady"
+				getReadyTimer = 0
+				resetPacmanPosition()
+				resetGhostsPosition()
+			end
 		end
 
+		if pacman.specialDotActive then
+			ghosts[i].speed = ghosts[i].slowSpeed
+			if (ghosts[i].mapX == pacman.mapX) and (ghosts[i].mapY == pacman.mapY) then
+				if ghosts[i].eaten == false then
+					ghosts[i].eaten = true
+				end
+			end
+		end
 
 		-- check if up/down/left/right free --
 		ghosts[i].upFree = false
@@ -1258,6 +1286,15 @@ function ghostsChangeDirection(ghost)
 	ghosts[ghost].y = ghosts[ghost].mapY * gridSize + gridSize * 0.5
 end
 
+function nextLevel()
+	collectedDots = 0
+	level = level + 1
+	resetPacmanPosition()
+	resetGhostsPosition()
+	initMap()
+	gameMode = "getReady"
+end
+
 function updateGame()
 	menuTimerWait()
 	if isEscPressed and menuEnabled then
@@ -1265,11 +1302,14 @@ function updateGame()
 		menuTimer = 0
 	end
 	updatePacman()
-	updateGhosts()
+	--updateGhosts()
 	menuTimerAdd()
 	gameTimer = gameTimer + delta
 	if lives == 0 then
 		gameMode = "gameOver"
+	end
+	if collectedDots == 236 then
+		nextLevel()
 	end
 end
 
