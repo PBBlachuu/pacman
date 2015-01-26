@@ -70,6 +70,15 @@ function loadStuff()
 	pacmanSprites[4][2] = love.graphics.newImage("images/pacman/left/pacman2left.png")
 	pacmanSprites[4][3] = love.graphics.newImage("images/pacman/left/pacman3left.png")
 
+	ghostsSprites = {}
+	ghostsSprites[1] = love.graphics.newImage("images/ghosts/1.png")
+	ghostsSprites[2] = love.graphics.newImage("images/ghosts/2.png")
+	ghostsSprites[3] = love.graphics.newImage("images/ghosts/3.png")
+	ghostsSprites[4] = love.graphics.newImage("images/ghosts/4.png")
+	ghostsSprites[5] = love.graphics.newImage("images/ghosts/safe.png")
+	ghostsSprites[6] = love.graphics.newImage("images/ghosts/eaten.png")
+
+
 	cornerSprites = {}
 	cornerSprites[1] = love.graphics.newImage("images/maze/1.png")
 	cornerSprites[2] = love.graphics.newImage("images/maze/2.png")
@@ -224,11 +233,11 @@ function drawMenu()
 end
 
 function drawMainMenu()
-	drawArea()
+	--drawArea()
 	love.graphics.setBackgroundColor(menuBgR, menuBgG, menuBgB)
 	love.graphics.setColor(255, 255, 255, 255)
 	love.graphics.setFont(fontBig)
-	love.graphics.print("PACMAN 0.2", offsetX+160, offsetY+100)
+	love.graphics.print("PACMAN 1.0", offsetX+160, offsetY+100)
 	love.graphics.setFont(fontMedium)
 	if menuActive == 1 then red() else white() end
 	love.graphics.print("NEW GAME", offsetX+200, offsetY+300)
@@ -241,11 +250,11 @@ function drawMainMenu()
 end
 
 function drawSettings()
-	drawArea()
+	--drawArea()
 	love.graphics.setBackgroundColor(menuBgR, menuBgG, menuBgB)
 	love.graphics.setColor(255, 255, 255, 255)
 	love.graphics.setFont(fontBig)
-	love.graphics.print("PACMAN 0.2 alpha", offsetX+160, offsetY+100)
+	love.graphics.print("PACMAN 1.0", offsetX+160, offsetY+100)
 	love.graphics.setFont(fontMedium)
 	white()
 	love.graphics.print("RESOLUTION", offsetX+200, offsetY+300)
@@ -262,14 +271,16 @@ function drawSettings()
 end
 
 function drawCredits()
-	drawArea()
+	--drawArea()
 	love.graphics.setBackgroundColor(menuBgR, menuBgG, menuBgB)
 	love.graphics.setColor(255, 255, 255, 255)
 	love.graphics.setFont(fontBig)
-	love.graphics.print("PACMAN 0.1 alpha", offsetX+160, offsetY+100)
+	love.graphics.print("PACMAN 1.0", offsetX+160, offsetY+100)
 	love.graphics.setFont(fontMedium)
 	love.graphics.print("CREDITS", offsetX+200, offsetY+300)
+	love.graphics.setFont(fontSmallMedium)
 	love.graphics.print("Game by Pawel Blach", offsetX+200, offsetY+400)
+	love.graphics.setFont(fontSmall)
 	love.graphics.print("Press space", offsetX+200, offsetY+500)
 end
 
@@ -776,16 +787,20 @@ end
 function drawGhosts()
 	
 	for i = 1, 4, 1 do
+		white()
 		if pacman.specialDotActive == false then
-			red()
+			--red()
+			love.graphics.draw(ghostsSprites[i], ghosts[i].x+gridOffsetX-8.5, ghosts[i].y+gridOffsetY-8.5)
 		else
 			if ghosts[i].eaten == true then
-				blue()
+				--blue()
+				love.graphics.draw(ghostsSprites[6], ghosts[i].x+gridOffsetX-8.5, ghosts[i].y+gridOffsetY-8.5)
 			else
-				white()
+				--white()
+				love.graphics.draw(ghostsSprites[5], ghosts[i].x+gridOffsetX-8.5, ghosts[i].y+gridOffsetY-8.5)
 			end
 		end
-		love.graphics.circle("fill", ghosts[i].x + gridOffsetX, ghosts[i].y + gridOffsetY, gridSize*0.5*0.8, 100)
+		--love.graphics.circle("fill", ghosts[i].x + gridOffsetX, ghosts[i].y + gridOffsetY, gridSize*0.5*0.8, 100)
 	end
 	drawGhostsDebug()
 end
@@ -1293,6 +1308,12 @@ function nextLevel()
 	resetGhostsPosition()
 	initMap()
 	gameMode = "getReady"
+	for i = 1, 4, 1 do
+		ghosts[i].normSpeed = ghosts[i].normSpeed + 10
+		ghosts[i].slowSpeed = ghosts[i].slowSpeed + 5
+	end
+	pacman.speed = pacman.speed + 2
+	specialDotMaxTime = specialDotMaxTime - 0.5
 end
 
 function updateGame()
@@ -1302,7 +1323,7 @@ function updateGame()
 		menuTimer = 0
 	end
 	updatePacman()
-	--updateGhosts()
+	updateGhosts()
 	menuTimerAdd()
 	gameTimer = gameTimer + delta
 	if lives == 0 then
